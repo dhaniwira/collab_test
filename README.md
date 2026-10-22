@@ -4,10 +4,95 @@ Uji coba workflow kolaborasi dengan Git (CLI) dan GitHub.
 
 ## Daftar Isi
 
+- [Dasar-Dasar Git](#dasar-dasar-git)
 - [Workflow Kolaborasi](#workflow-kolaborasi)
 - [Panduan Pengelola (Maintainer)](#panduan-pengelola-maintainer)
 - [Panduan Kelola Remote](#panduan-kelola-remote)
 - [Panduan Semantic Commit Message](#panduan-semantic-commit-message)
+
+## Dasar-Dasar Git
+
+Git adalah sistem kontrol versi yang menyimpan riwayat perubahan file. Setiap perubahan yang di-commit tercatat sebagai snapshot, sehingga Anda bisa melihat, membandingkan, atau mengembalikan kondisi file kapan saja. GitHub adalah layanan hosting repository Git; Git bekerja di komputer Anda, sedangkan GitHub menyimpan salinan dan menjadi tempat kolaborasi.
+
+Tiga area utama yang perlu dipahami:
+
+- **Working directory** — file yang sedang Anda edit di folder proyek.
+- **Staging area (index)** — daftar perubahan yang sudah ditandai dan akan masuk commit berikutnya. Diisi dengan `git add`.
+- **Repository lokal** — riwayat commit yang tersimpan di folder `.git`.
+
+Alur dasar: edit file → `git add` → `git commit`. Untuk berbagi, commit dikirim dengan `git push` ke remote, dan perubahan orang lain diambil dengan `git fetch`/`git pull`.
+
+Istilah penting:
+
+- **Commit** — catatan permanen berisi perubahan beserta pesan dan penulisnya, punya ID unik (hash).
+- **Branch** — jalur pengembangan terpisah; memungkinkan Anda bekerja tanpa mengganggu `main`.
+- **Merge** — menggabungkan riwayat dua branch menjadi satu.
+- **Rebase** — memindahkan commit branch Anda di atas commit branch lain agar riwayat tampak lurus.
+- **Remote** — alias untuk URL repository di server, misalnya `origin` (fork Anda) dan `upstream` (repository asli).
+- **HEAD** — penunjuk ke commit/branch yang sedang aktif Anda kerjakan.
+
+### Perintah Dasar
+
+- **Membuat repository baru**
+  ```bash
+  git init   # mengubah folder saat ini menjadi repository Git baru
+  ```
+- **Menyalin repository dari GitHub**
+  ```bash
+  git clone https://github.com/<username>/<repo>.git   # mengunduh seluruh repository beserta riwayatnya
+  ```
+- **Melihat kondisi file**
+  ```bash
+  git status            # menampilkan file yang berubah, ter-stage, atau belum dilacak
+  git status -s         # versi ringkas satu baris per file
+  ```
+- **Menandai perubahan untuk commit**
+  ```bash
+  git add <file>        # menandai satu file
+  git add .             # menandai semua perubahan di folder saat ini
+  ```
+- **Menyimpan perubahan**
+  ```bash
+  git commit -m "feat: deskripsi singkat"   # membuat commit dengan pesan langsung
+  ```
+- **Melihat riwayat commit**
+  ```bash
+  git log --oneline         # daftar commit ringkas (hash + pesan)
+  git log --oneline --graph # ditambah grafik branch dan merge
+  ```
+- **Melihat perubahan**
+  ```bash
+  git diff              # perubahan yang belum di-stage
+  git diff --staged     # perubahan yang sudah di-stage dan akan di-commit
+  git diff main...feat  # perbedaan branch fitur dibanding main (dari merge base)
+  ```
+- **Mengelola branch**
+  ```bash
+  git branch                      # daftar branch lokal (* menandai branch aktif)
+  git checkout -b feat/nama-fitur # membuat branch baru sekaligus berpindah ke sana
+  git checkout main               # berpindah ke branch main
+  git switch main                 # alternatif modern untuk berpindah branch
+  git branch -d feat/nama-fitur   # menghapus branch lokal yang sudah ter-merge
+  ```
+- **Berbagi dan mengambil perubahan**
+  ```bash
+  git push -u origin feat/nama-fitur   # mengunggah branch dan menyetel tracking ke origin
+  git fetch origin                     # mengambil commit terbaru tanpa mengubah branch kerja
+  git pull origin main                 # fetch lalu merge perubahan remote ke branch aktif
+  ```
+- **Membatalkan perubahan**
+  ```bash
+  git restore <file>              # membuang perubahan pada file yang belum di-stage
+  git restore --staged <file>     # mengeluarkan file dari staging tanpa menghapus perubahannya
+  git commit --amend              # mengubah commit terakhir (misalnya memperbaiki pesan)
+  ```
+- **Menyimpan sementara pekerjaan**
+  ```bash
+  git stash        # menyimpan perubahan yang belum selesai agar working directory bersih
+  git stash pop    # mengembalikan perubahan yang terakhir di-stash
+  ```
+
+> **Tips:** jalankan `git status` sebelum dan sesudah perintah penting untuk memastikan kondisi repository sesuai harapan. Gunakan `git help <perintah>` untuk melihat dokumentasi lengkap.
 
 ## Workflow Kolaborasi
 
