@@ -60,46 +60,63 @@ Alur di bawah ini ditulis dari sudut pandang kontributor. Bila Anda pemilik repo
 
 Bagian ini adalah sudut pandang pemilik repository asli yang menerima pull request (PR). Alurnya berkebalikan dengan kontributor: pengelola mengambil branch dari repository kontributor, meninjaunya, lalu menggabungkannya ke branch utama.
 
+Istilah penting yang dipakai di bagian ini:
+
+- **Repository asli (upstream/origin milik pengelola)** — repository utama tempat perubahan akhirnya harus masuk.
+- **Fork kontributor** — salinan repository di akun GitHub kontributor; PR dibuat dari branch di fork ini.
+- **Remote** — nama pendek untuk sebuah URL repository di komputer Anda. Pengelola bisa menambahkan fork kontributor sebagai remote agar bisa `fetch` dari sana.
+- **Ref PR** — GitHub menyimpan setiap PR sebagai ref khusus `refs/pull/<nomor>/head`, sehingga commit PR bisa diambil langsung tanpa menambah remote.
+- **Branch review** — branch lokal sementara untuk meninjau PR secara terpisah sebelum masuk ke `main`.
+
+Prinsipnya: **jangan merge sebelum meninjau**, dan **selalu sinkronkan `main` lokal dengan repository asli** sebelum merge agar hasilnya tidak menimpa perubahan terbaru. Detail tiap langkah dijelaskan di bawah.
+
 1. **Lihat pull request yang masuk**  
    Buka tab **Pull requests** di halaman repository GitHub untuk melihat daftar PR, deskripsi, commit, dan file yang berubah. Langkah ini dilakukan sepenuhnya di GitHub, tanpa perintah Git.
 2. **Tambahkan repository kontributor sebagai remote** (cukup sekali per kontributor)  
    ```bash
    git remote add <nama-kontributor> https://github.com/<username-kontributor>/<repo>.git   # mendaftarkan fork kontributor sebagai remote
    ```
+   Gunakan nama yang mudah dikenali, misalnya `budi` atau `kontributor1`. Setelah ditambahkan, branch kontributor bisa diakses sebagai `<nama-kontributor>/<nama-branch>`. Periksa dengan `git remote -v`; bila URL berubah, gunakan `git remote set-url <nama-kontributor> <url-baru>`.
 3. **Ambil perubahan dari fork kontributor**  
    ```bash
    git fetch <nama-kontributor>        # mengunduh branch kontributor tanpa mengubah branch lokal
    ```
+   `fetch` hanya mengunduh; branch kerja Anda tidak berubah. Setelah itu branch kontributor tersedia sebagai remote-tracking branch, misalnya `<nama-kontributor>/feat/nama-fitur`.
    Cara cepat tanpa menambah remote: ambil langsung ref PR dari repository asli.
    ```bash
    git fetch origin pull/<nomor-pr>/head:pr-<nomor-pr>   # mengambil commit PR ke branch lokal pr-<nomor-pr>
    ```
+   Ref `refs/pull/<nomor>/head` selalu menunjuk commit terbaru PR, jadi cara ini otomatis mengikuti pembaruan yang di-push kontributor.
 4. **Buat branch review dari branch fitur kontributor**  
    ```bash
    git checkout -b review/feat-nama-fitur <nama-kontributor>/feat/nama-fitur   # membuat branch lokal untuk meninjau
    ```
+   Branch review memisahkan pekerjaan PR dari `main`, sehingga Anda bisa bereksperimen, menyelesaikan konflik, atau membatalkan tanpa mengganggu branch utama. Jika memakai cara ref PR pada langkah 3, ganti sumbernya menjadi `pr-<nomor-pr>`.
 5. **Tinjau perubahan sebelum merge**  
    ```bash
    git diff main...review/feat-nama-fitur   # melihat semua perubahan PR dibanding branch main
    git log --oneline main..review/feat-nama-fitur   # melihat daftar commit yang akan masuk
    ```
-   Jalankan test/lint proyek untuk memastikan perubahan aman.
+   Tiga titik (`...`) membandingkan dari titik temu (merge base), sehingga diff hanya menampilkan perubahan milik PR, bukan perubahan lain di `main`. Dua titik (`..`) pada `git log` menampilkan commit yang ada di branch review tetapi belum ada di `main`.
+   Jalankan test/lint proyek untuk memastikan perubahan aman. Perhatikan juga kualitas kode, penamaan, dan apakah perubahan sesuai deskripsi PR. Jika perlu perbaikan, minta kontributor memperbarui branch-nya, lalu ulangi langkah 3-4 agar branch review memuat commit terbaru.
 6. **Sinkronkan branch utama lalu merge**  
    ```bash
    git checkout main                   # berpindah ke branch utama
    git pull origin main                # mengambil sekaligus menggabungkan perubahan terbaru dari repository asli
    git merge --no-ff review/feat-nama-fitur   # menggabungkan branch fitur dengan commit merge eksplisit
    ```
+   Sinkronisasi dulu agar `main` lokal sama dengan repository asli; ini mencegah merge yang menimpa perubahan terbaru. Opsi `--no-ff` memaksa commit merge tetap dibuat meskipun sebenarnya bisa *fast-forward*, sehingga riwayat menunjukkan kapan PR digabungkan. Tanpa `--no-ff`, Git bisa sekadar memajukan pointer `main` dan jejak merge-nya hilang.
 7. **Push hasil merge ke repository asli**  
    ```bash
    git push origin main                # mengunggah branch main yang sudah berisi perubahan PR
    ```
-   GitHub otomatis menandai PR sebagai *merged* setelah commit-nya masuk ke branch tujuan.
+   GitHub otomatis menandai PR sebagai *merged* setelah commit-nya masuk ke branch tujuan. Bila push ditolak karena `main` remote sudah bergerak, jangan force-push; ulangi `git pull origin main`, selesaikan konflik bila ada, lalu push lagi.
 8. **Bersihkan branch setelah merge**  
    ```bash
    git branch -d review/feat-nama-fitur         # menghapus branch review lokal yang sudah tidak dipakai
    git push <nama-kontributor> --delete feat/nama-fitur   # menghapus branch fitur di fork kontributor
    ```
+   `-d` hanya menghapus branch yang sudah ter-merge; jika Git menolak, berarti ada commit yang belum masuk `main` dan perlu diperiksa dulu. Menghapus branch di fork kontributor bersifat opsional dan sebaiknya dilakukan setelah PR benar-benar selesai. Alternatifnya, kontributor menghapusnya sendiri, atau Anda cukup menekan tombol **Delete branch** pada halaman PR di GitHub setelah merge.
 
 > **Bila terjadi konflik saat merge:** minta kontributor melakukan `git rebase` terhadap `upstream/main` dan push ulang (lihat [Tips konflik](#workflow-kolaborasi)), atau selesaikan konflik langsung di branch review lalu commit hasilnya sebelum merge.
 
